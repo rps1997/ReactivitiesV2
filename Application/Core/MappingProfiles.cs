@@ -2,12 +2,13 @@
 using Domain;
 using Domain.DTO;
 
-namespace API
+namespace API.Core
 {
-    public class ActivityProfile : Profile
+    public class MappingProfiles : Profile
     {
-        public ActivityProfile()
+        public MappingProfiles()
         {
+            CreateMap<Activity, Activity>();
             CreateMap<UpdateActivityDto, Activity>();
         }
     }

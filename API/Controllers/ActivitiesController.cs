@@ -4,46 +4,47 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using AutoMapper;
+using MediatR;
+using Application.Activities.Queries;
+using Application.Activities.Commands;
 
 namespace API.Controllers
 {
-    public class ActivitiesController(AppDbContext context, IMapper mapper) : BaseApiController
+    public class ActivitiesController : BaseApiController
     { 
         [HttpGet]
         public async Task<ActionResult<List<Activity>>> GetActivities()
         {
-            return await context.Activities.ToListAsync();
+            var query = await Mediator.Send(new GetActivityList.Query());
+            return query;
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Activity>> GetActivityDetail(string id)
         {
-            var activity = await context.Activities.FindAsync(id);
-
-            if (activity == null) return NotFound();
-            return activity;
+            var query =  await Mediator.Send(new GetActivityDetail.Query{Id = id});
+            return query;
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateActivity(string id, [FromBody] UpdateActivityDto activity)
+        [HttpPost]
+        public async Task<ActionResult<string>> CreateActivity(Activity activity)
         {
-            if (activity == null)
-                return BadRequest("Activity data is required");
+            await Mediator.Send(new CreateActivity.Command{Activity = activity});
+            return Ok(activity.Id);
+        }
 
-            if (string.IsNullOrEmpty(id))
-                return BadRequest("Id is required");
+        [HttpPut]
+        public async Task<IActionResult> UpdateActivity(Activity activity)
+        {
+            await Mediator.Send(new EditActivity.Command{Activity = activity});
+            return Ok();
+        }
 
-            var existingActivity = await context.Activities.FindAsync(id);
-
-            if (existingActivity == null)
-                return NotFound();
-
-            mapper.Map(activity, existingActivity);
-            
-
-            await context.SaveChangesAsync();
-
-            return Ok(existingActivity); // or NoContent()
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteActivity(string id)
+        {
+            await Mediator.Send(new DeleteActivity.Command{Id = id});
+            return Ok();
         }
     }
 }
